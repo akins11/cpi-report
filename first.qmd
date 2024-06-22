@@ -1,0 +1,65 @@
+---
+author: Ayomide
+date: last-modified
+---
+
+### Install packages
+```{r}
+#| eval: false
+
+install.packages("tidyverse")
+Sys.time()
+```
+
+
+### Import packages
+```{r}
+#| warning: false
+#| message: false
+
+library(tidyverse)
+```
+
+
+### Quarto Error
+```{r}
+#| error: true
+
+if (TRUE) {
+  stop("There is an error!!")
+}
+```
+
+
+### Current Time
+
+```{r}
+
+Sys.time()
+
+```
+
+
+::: {.bg-success .text-white .p-3 .m-3 #my-id}
+
+today's date is `r Sys.Date()`
+
+:::
+
+
+::: {.panel-tabset}
+
+## Tab1
+
+```{r}
+knitr::kable(head(mtcars, 10))
+```
+
+
+## Tab2
+```{r}
+
+plot(rnorm(1000))
+```
+
+:::

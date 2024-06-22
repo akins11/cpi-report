@@ -1,0 +1,343 @@
+# Nigeria's Cost of Living Crisis
+#### CPI Trend Insight from 1995 to 2024  
+  
+<br> 
+The Consumer Price Index (CPI) is a crucial tool for measuring how the prices of goods and services bought by households change over time. It serves as the primary indicator of inflation rates, which have far-reaching effects on business costs and consumer purchasing power. Among countries worldwide, Nigeria stands out for its notably high inflation rate.
+
+
+```{r}
+#| message: false
+#| warning: false
+
+# Import packages
+library(tidyverse)
+library(gt)
+
+# Import data
+cpi <- read_csv(paste0(str_remove(getwd(), "cpi-report"), "cleaned_cpi.csv"))
+
+# Create custom ggplot2 theme
+custom_gg_theme <- theme_minimal() +
+  theme(
+    plot.title = element_text(color = "gray29", size = 11, face = "bold"),
+    plot.subtitle = element_text(color = "gray31", size = 9.5),
+    plot.caption = element_text(color = "gray48", size = 8),
+    axis.title = element_text(color = "gray31"),
+    axis.text = element_text(color = "gray29")
+  )
+# Reset ggplot2 theme
+theme_set(custom_gg_theme)
+```
+
+```{r}
+
+cpi |>
+  # filter(year > 2013) |>
+  ggplot(aes(x = date, y = all_items)) +
+  geom_hline(
+    yintercept = mean(cpi$all_items), 
+    color = "darkseagreen3",
+    linetype = "dashed",
+    linewidth = 0.8
+  ) +
+  annotate(
+    geom = "text", 
+    label = paste("Average CPI:", round(mean(cpi$all_items), 2)), 
+    x = as_date("1998-12-01"), 
+    y = mean(cpi$all_items) + 45,
+    color = "darkseagreen",
+    size = 4
+  ) +
+  geom_line(
+    data = filter(cpi, year < 2016), 
+    color = "dodgerblue3",
+    linewidth = 1
+  ) + 
+  geom_line(
+    data = filter(cpi, year >= 2016), 
+    color = "firebrick4",
+    linewidth = 1
+  ) + 
+  geom_ribbon(
+    data = filter(cpi, year >= 2016), 
+    aes(ymin = 0, ymax = max(cpi$all_items)),
+    fill = "indianred1", 
+    alpha = 0.2
+  ) +
+  labs(
+    x = "Date",
+    y = "All Items",
+    title = "Monthly Consumer Price Index (From Jan 1995 - Apr 2024)",
+    subtitle = "In Nigeria Across All Location.",
+    caption = "Source: NBS"
+  ) +
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y")
+
+```
+
+This report examines Nigeria's CPI from January 1995 to April 2024, with a particular focus on the period after 2016 when the index began to rise significantly. To understand CPI, there are various factors that contribute to increased inflation such as, an expansion of the money supply by the CBN can lead to too much money chasing too few goods, driving up prices. Government spending that exceeds revenue can also fuel inflation by increasing demand without a corresponding increase in production. Additionally, rising production costs, such as increased cost of raw material, often get passed on to consumers. Lastly, External factors like currency devaluation can make imports more expensive, contributing to overall price increases.
+
+For the first two decades starting in 1995, Nigeria's CPI exhibited a gradual and consistent upward trend. This period was characterized by relative economic stability with inflation rates that, while present, were generally manageable. However, the landscape changed dramatically after 2016. The CPI began to climb at a much steeper rate, indicating a sharp increase in inflation. This exponential rise points to a significant shift in Nigeria's economic conditions, profoundly affecting the cost of living for its citizens.
+
+
+
+```{r}
+#| fig-height: 4
+
+high_cpi_period <- cpi |> filter(year >= 2016) 
+
+
+high_cpi_period |>
+  ggplot(aes(x = date, y = all_items)) +
+  geom_line(
+    color = "firebrick4", linewidth = 1
+  ) +
+  geom_hline(
+    yintercept = mean(high_cpi_period$all_items), 
+    color = "coral",
+    linetype = "dashed",
+    linewidth = 0.8
+  ) +
+  annotate(
+    geom = "text",
+    label = paste("Average CPI:", round(mean(high_cpi_period$all_items), 2)),
+    x = as_date("2016-12-01"),
+    y = mean(high_cpi_period$all_items) + 45,
+    color = "coral1",
+    size = 4
+  ) +
+  labs(
+    x = "Date",
+    y = "All Items",
+    title = "Monthly Consumer Price Index (Jan 2016 - Apr 2024)",
+    subtitle = "In Nigeria Across All Location.",
+    caption = "Source: NBS"
+  )
+```
+
+A closer examination of the period from January 2016 to April 2024 reveals the extent of this change. At the beginning of 2016, the CPI stood at approximately 182. Over the next few years, it continued to rise steadily. The average CPI during this period was 355.58, a figure that was soon left behind as the index approached 720 by April 2024.
+
+These recent developments underline the ongoing challenges faced by Nigeria in managing its economy and controlling inflation. The persistent rise in the cost of living has significant implications for both businesses and consumers alike, highlighting the need for effective economic policies to address these inflationary pressures.
+
+
+## Price Changes Across The highest sureg periods 
+```{r}
+high_point_years <- filter(cpi, between(year, 2016, 2024))
+```
+
+
+###  Month on Month
+
+::: {.panel-tabset}
+
+## Table
+
+```{r}
+high_point_years |>
+  mutate(
+    lag_mom_cha = lag(MoM_changes, 1, default = 0),
+    change = case_when(
+      lag_mom_cha > MoM_changes ~ "arrow-up", 
+      lag_mom_cha < MoM_changes ~ "arrow-down",
+      lag_mom_cha == MoM_changes ~ "minus"
+    )
+  ) |>
+  select(year, month, all_items, MoM_changes, change) |>
+  gt() |>
+  cols_label(
+    year = "Year", 
+    month = "Month", 
+    all_items = "Index Point",
+    MoM_changes = md("**MoM**"), 
+    change = ""
+  ) |>
+  cols_align(align = "left", columns = c(year, month)) |>
+  cols_align(align = "center", columns = c(MoM_changes, change)) |>
+  cols_width(year ~ px(100)) |>
+  fmt_icon(
+    columns = change, 
+    height = "1em",
+    stroke_color = "gray36", 
+    stroke_width = "0.5em",
+    fill_color = "gray36"
+    
+  ) |>
+  tab_header(title = "MoM CPI Changes", subtitle = "From Jan 2016 - Apr 2024") |>
+  tab_source_note(source_note = md("Source: **NBS**"))  |>
+  tab_options(
+    heading.align = "left",
+    ihtml.active = TRUE,
+    ihtml.use_pagination = TRUE,
+    ihtml.use_sorting = TRUE,
+    ihtml.use_search = TRUE,
+    ihtml.use_highlight = TRUE,
+    ihtml.use_compact_mode = TRUE
+  )
+```
+
+
+## Chart
+```{r}
+
+high_point_years |>
+  
+  ggplot(aes(x = date, y = MoM_changes)) +
+  geom_col(fill = "mediumpurple") +
+  geom_hline(
+    yintercept = median(high_point_years$MoM_changes), 
+    color = "gray64",
+    linetype = "dashed",
+    linewidth = 0.5
+  ) +
+  labs(
+    x = "Date",
+    y = "Index Point Changes",
+    title = "Month on Month Index Point Changes",
+    subtitle = "January 2016 - April 2024"
+  ) +
+  scale_y_continuous(
+    labels = scales::label_number(suffix = "%")
+  )
+
+```
+
+:::
+
+
+The month-over-month (MoM) inflation changes from January 2016 to April 2024 show a relative fluctuating pattern, with significant shifts in magnitude over time. The early years (2016-2019) had a relatively stable and lower inflation rates, typically ranging between 0.7% and 2.8%. However, a marked increase began in late 2020, likely influenced by the economic impacts of the COVID-19 pandemic. This led to a period of heightened inflation culminating in the highest recorded MoM change of 3.18% in August 2023. The most recent data (late 2023 to April 2024) indicate persistently high inflation rates, mostly above 2%, suggesting a continuation of elevated inflationary pressures compared to the historical norms observed in the earlier years.
+
+
+
+###  Year on Year
+
+::: {.panel-tabset}
+
+## Table
+
+
+```{r}
+chg_str <- function(prev, curr) {
+  case_when(
+    curr > prev ~ "arrow-up",
+    curr < prev ~ "arrow-down",
+    curr == prev ~ "minus"
+  )
+}
+
+temp <-  cpi |>
+  filter(between(year, 2015, 2024)) |>
+  select(year, month, all_items, YoY_changes) |>
+  pivot_wider(
+    id_cols = c(month),
+    names_from = year,
+    values_from = YoY_changes
+  ) |>
+  mutate(
+    chg_16 = chg_str(`2015`, `2016`),
+    chg_17 = chg_str(`2016`, `2017`),
+    chg_18 = chg_str(`2017`, `2018`),
+    chg_19 = chg_str(`2018`, `2019`),
+    chg_20 = chg_str(`2019`, `2020`),
+    chg_21 = chg_str(`2020`, `2021`),
+    chg_22 = chg_str(`2021`, `2022`),
+    chg_23 = chg_str(`2022`, `2023`),
+    chg_24 = chg_str(`2023`, `2024`)
+  ) |>
+  pivot_longer(
+    cols=`2015`:`2024`,
+    names_to = "year",
+    values_to = "YoY_changes"
+  )
+
+temp_nor <- temp |> select(month, year, YoY_changes) |> filter(year != 2015)
+
+temp_chg <- temp |> select(month, contains("chg")) |> distinct()
+names(temp_chg) <- c("month", 2016:2024)
+temp_chg <- temp_chg |>
+  pivot_longer(
+      cols = `2016`:`2024`,
+      names_to = "change_year",
+      values_to = "change"
+    )
+
+
+temp_nor |>
+  bind_cols(select(temp_chg, -c(month, change_year))) |>
+  # filter(!month %in% month.name[5:12] & year == 2024) |>
+
+  gt() |>
+  cols_label(
+    year = "Year", month = "Month", YoY_changes = md("**YoY**"), change = ""
+  ) |>
+  cols_align(align = "left", columns = c(year, month)) |>
+  cols_align(align = "center", columns = c(YoY_changes, change)) |>
+  cols_width(year ~ px(100)) |>
+  tab_style(
+    style = cell_text(color = "gray74"),
+    locations = cells_body(
+      columns = YoY_changes,
+      row = is.na(YoY_changes)
+    )
+  ) |>
+  tab_style(
+    style = cell_text(color = "gray74"),
+    locations = cells_body(
+      columns = change,
+      row = is.na(change)
+    )
+  ) |>
+  fmt_icon(
+    columns = change,
+    height = "1em",
+    stroke_color = "gray36",
+    stroke_width = "0.5em",
+    fill_color = "gray36"
+
+  ) |>
+  tab_header(title = "YoY CPI Changes", subtitle = "From Jan 2016 - Apr 2024") |>
+  tab_source_note(source_note = md("Source: **NBS**")) |>
+  tab_options(
+    heading.align = "left",
+    ihtml.active = TRUE,
+    ihtml.use_pagination = TRUE,
+    ihtml.use_sorting = TRUE,
+    ihtml.use_search = TRUE,
+    ihtml.use_highlight = TRUE,
+    ihtml.use_compact_mode = TRUE
+  )
+
+```
+
+
+## Chart
+
+```{r}
+
+high_point_years |>
+  
+  ggplot(aes(x = date, y = YoY_changes)) +
+  geom_col(fill = "mediumpurple") +
+  geom_hline(
+    yintercept = median(high_point_years$YoY_changes), 
+    color = "gray64",
+    linetype = "dashed",
+    linewidth = 0.5
+  ) +
+  labs(
+    x = "Date",
+    y = "Index Point Changes",
+    title = "Year on Year Index Point Changes",
+    subtitle = "January 2016 - April 2024"
+  ) +
+  scale_y_continuous(
+    labels = scales::label_number(suffix = "%")
+  )
+
+```
+
+
+:::
+
+The YoY inflation data from January 2016 to April 2024 reveals a more complex inflationary environment with distinct phases of acceleration and deceleration. The period begins with a sharp increase in inflation rates, rising from 9.6% in January 2016 to a peak of 18.55% by December of the same year. This is followed by a gradual decline and a period of relative stability from 2017 to 2019, with rates hovering around 11-12%. However, starting in 2020, inflation rates began to climb again. This upward trend intensified dramatically from 2021 onwards, with YoY rates surpassing 20% by mid-2022 and continuing to accelerate. The data concludes with an alarming surge, reaching 33.69% in April 2024, marking the highest rate in the period under review and indicating a moment of severe inflationary pressure. 
+
+This trend, as observed in this report suggests a significant and persistent increase in the cost of living in Nigeria over the analysis period, with the pace of price increases accelerating notably in recent years as a dangerous rate.
