@@ -14,7 +14,7 @@ library(tidyverse)
 library(gt)
 
 # Import data
-cpi <- read_csv(paste0(str_remove(getwd(), "cpi-report"), "cleaned_cpi.csv"))
+cpi <- read_csv(paste0(getwd(), "/cleaned_cpi.csv"))
 
 # Create custom ggplot2 theme
 custom_gg_theme <- theme_minimal() +
